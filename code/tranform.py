@@ -16,7 +16,7 @@ class ImageProcessor:
         if len(self.image.shape) == 2:
             return "Grayscale"      # 如果是二维数组，表示灰度图
         elif len(self.image.shape) == 3 and self.image.shape[2] == 3:
-            return "BGR"            # 如果是三维数组且最后一维为3，表示BGR彩色图
+            return "RGB"            # 如果是三维数组且最后一维为3，表示RGB彩色图
         else:
             return "Empty" # 其他类型的图像无法处理
 
@@ -41,7 +41,7 @@ class ImageProcessor:
         :return: 返回RGB格式的图像
         """
 
-        if self.type == "BGR":
+        if self.type == "RGB":
             return self.image
         elif self.type == "Grayscale":
             # 如果是灰度图像，直接处理
@@ -86,7 +86,7 @@ class ImageProcessor:
             # 如果已经是灰度图，直接返回
             return self.image.copy()
 
-        elif self.type == "BGR":
+        elif self.type == "RGB":
 
             if method == 'average':
                 # 平均法：取RGB的平均值
@@ -619,7 +619,7 @@ def conv2d(image:np.ndarray, kernel:np.ndarray) -> np.ndarray:
 
 def imread(filename: str) -> np.ndarray:
     with Image.open(filename) as img:
-        img_array = np.array(img)
+        img_array = np.array(img.convert('RGB'))
     return img_array
 
 def imwrite(filename: str, img_array: np.ndarray):

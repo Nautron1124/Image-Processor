@@ -295,10 +295,10 @@ class ImageViewer(QMainWindow):
             # 如果是灰度图，使用 QImage 格式将其转换为 QPixmap
             q_image = QImage(show_image.data, show_image.shape[1], show_image.shape[0],
                              show_image.strides[0], QImage.Format_Grayscale8)
-        elif image_type == "BGR":
-            # 如果是 BGR 彩色图像，先转换为 RGB 格式
+        elif image_type == "RGB":
+            # 如果是 RGB 彩色图像，先转换为 RGB 格式
             q_image = QImage(show_image.data, show_image.shape[1], show_image.shape[0],
-                             show_image.strides[0], QImage.Format_BGR888)
+                             show_image.strides[0], QImage.Format_RGB888)
         else:
             # 如果是未知类型的图像，设置为无效格式
             q_image = QImage(show_image.data, show_image.shape[1], show_image.shape[0],
