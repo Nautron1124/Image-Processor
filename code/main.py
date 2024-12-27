@@ -243,7 +243,7 @@ class ImageViewer(QMainWindow):
         if self.file_path:
             # 读取图像
             self.current_image = ImageProcessor(imread(self.file_path))
-            self.show_image = ImageProcessor(imread(self.file_path)).image
+            self.show_image = self.current_image.image.copy()
 
             # 将图像转换为 QPixmap 并显示
             pixmap = self.to_pixmap()
@@ -253,7 +253,7 @@ class ImageViewer(QMainWindow):
     def save_image(self):
         if self.current_image is not None:
             # 弹出保存文件对话框
-            save_path, _ = self.file_dialog.getSaveFileName(self, 'Save Image File', '',
+            save_path, _ = self.file_dialog.getSaveFileName(self, 'Save Image File', self.file_path,
                                                             'Images (*.jpg *.png *.jpeg *.bmp)')
 
             if save_path:
@@ -327,7 +327,11 @@ class ImageViewer(QMainWindow):
     def save_choose_feature(self):
         if self.current_image.features_manager.features is not None:
             nearest_feature = self.current_image.features_manager.get_nearest_feature((self.clicked_coordinate))
-            FeatureManager([nearest_feature]).save_to_csv("example_feature.csv")
+            # 弹出保存文件对话框
+            save_path, _ = self.file_dialog.getSaveFileName(self, 'Save Feature File', '',
+                                                            'cvs (*.csv)')
+            print(save_path)
+            FeatureManager([nearest_feature]).save_to_csv(save_path)
             print("save to example_feature success")
 
     def batch_process_begin(self):

@@ -121,7 +121,7 @@ class ImageProcessor:
     def negative_image(self)    -> np.ndarray:
         """创建图像的负片效果，返回反转后的图像"""
         negative_image = 255 - self.image  # 对每个通道取反
-        self.image = negative_image
+        #self.image = negative_image
         return negative_image  # 返回负片图像
 
     def threshold_image(self, threshold_parameters_dict:dict)    -> np.ndarray:
@@ -324,7 +324,7 @@ class ImageProcessor:
         )
         self.features_manager.remove_testing_features()
         if lines is not None:
-            rgb_image = self.to_rgb()
+            rgb_image = self.to_rgb().copy()
             for line in lines:
                 line = np.array(line)[0]
                 self.features_manager.add_feature("Line", {'start': (int(line[0]), int(line[1])), 'end': (int(line[2]), int(line[3]))})  # 存储识别到的直线
@@ -332,7 +332,7 @@ class ImageProcessor:
                          thickness=1)
             return rgb_image
         else:
-            return self.image
+            return self.image.copy()
 
     def contour_recongition(self,contour_parameters_dict:dict)  -> np.ndarray:
         grayscale_image = self.to_grayscale()
