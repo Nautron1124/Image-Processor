@@ -456,15 +456,25 @@ class FeatureManager:
         return nearest_feature
 
     def save_to_csv(self, save_path: str):
-        fieldnames = ['feature type', 'data', 'status']
+        fieldnames = ['type', 'data', 'status']
         with open(save_path, 'w', newline='', encoding='utf-8') as file:
             # 写入标题行
-            file.write(','.join(fieldnames) + '\n')
+            file.write(';'.join(fieldnames) + '\n')
 
             # 写入数据到CSV文件
             for feature in self.features:
                 row = [feature.type, str(feature.data), feature.status]
-                file.write(','.join(row) + '\n')
+                file.write(';'.join(row) + '\n')
+    
+    def load_from_csv(self, load_path: str):
+        self.features = []
+        with open(load_path, 'r', newline='', encoding='utf-8') as file:
+            lines = file.readlines()
+            print(lines)
+            for line in lines[1:]:
+                feature_type, data, status = line.strip().split(';')
+                feature = Feature(feature_type, eval(data), status)
+                self.features.append(feature)
 
 
 def subtract_images_with_abs(overlay_image:np.ndarray, target_image:np.ndarray) -> np.ndarray:

@@ -220,10 +220,15 @@ class ImageViewer(QMainWindow):
             "batch process": self.batch_process_folder
         })
 
+        data_tab = RibbonTab("Data",{
+            "Save Feature": self.save_choose_feature
+        })
+
         self.ribbon_tabs.addTab(file_tab, "File")
         self.ribbon_tabs.addTab(process_tab, "Process")
         self.ribbon_tabs.addTab(features_tab, "Features")
         self.ribbon_tabs.addTab(batch_tab, "Batch Process")
+        self.ribbon_tabs.addTab(data_tab, "Data")
 
         # 在图像标签上添加点击事件处理程序
         self.image_label.mousePressEvent = self.mouse_click_event
@@ -322,7 +327,8 @@ class ImageViewer(QMainWindow):
     def save_choose_feature(self):
         if self.current_image.features_manager.features is not None:
             nearest_feature = self.current_image.features_manager.get_nearest_feature((self.clicked_coordinate))
-            FeatureManager([nearest_feature]).save_to_csv("example_output_with_header.csv")
+            FeatureManager([nearest_feature]).save_to_csv("example_feature.csv")
+            print("save to example_feature success")
 
     def batch_process_begin(self):
         self.begin = True
