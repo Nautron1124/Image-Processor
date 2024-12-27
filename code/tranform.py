@@ -334,18 +334,51 @@ class ImageProcessor:
         else:
             return self.image.copy()
 
-    def contour_recongition(self,contour_parameters_dict:dict)  -> np.ndarray:
+    def contour_recongition(self) -> np.ndarray:
         grayscale_image = self.to_grayscale()
-        contours, hierarchy = cv2.findContours(grayscale_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         self.features_manager.remove_testing_features()
-        if contours is not None:
-            rgb_image = self.to_rgb()
-            cv2.drawContours(rgb_image,contours, -1, (0, 0, 255), 0)
-            for contour in contours:
+        
+        contours = []
+        visited = np.zeros_like(grayscale_image, dtype=bool)
+        height, width = grayscale_image.shape
 
-                n=len(contour)
-                print(contour, n)
-                self.features_manager.add_feature("Contour", {"contour": np.array(contour).reshape((n, 2)).tolist()})
+        def is_valid(x, y):
+            return 0 <= x < height and 0 <= y < width and grayscale_image[x, y] > 10
+
+        def dfs(x:int, y:int) -> list[tuple]:
+            stack = [(x, y)]
+            contour = []
+            while stack:
+                cx, cy = stack.pop()
+                if is_valid(cx, cy) and not visited[cx, cy]:
+                    visited[cx, cy] = True
+                    # 检查是否是边界点
+                    is_boundary = False
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        nx, ny = cx + dx, cy + dy
+                        if not is_valid(nx, ny):
+                            is_boundary = True 
+                        stack.append((nx, ny))
+                    if is_boundary:
+                        contour.append((cx, cy))
+            return contour
+
+        for i in range(height):
+            for j in range(width):
+                if is_valid(i, j)and not visited[i, j]:
+                    contour = dfs(i, j)
+                    if len(contour)>20:
+                        contour=Feature('Contour', {'contour': contour}).split_disconnected_contour()
+                        contours.extend(contour)
+
+        if contours:
+            contours.sort(key=len, reverse=True)
+            rgb_image = self.to_rgb()
+            for contour in contours[:1]:
+                contour = np.array(contour)
+                self.features_manager.add_feature("Contour", {"contour": contour.tolist()})
+                for point in contour:
+                    rgb_image[point[0], point[1]] = [0, 0, 255] 
             return rgb_image
         else:
             return self.image
@@ -383,14 +416,14 @@ class Feature:
 
     def line_contour_intersections(self, line_segment: tuple[tuple,tuple], contour: list) -> list:
         """
-        Find intersection points between a line segment and a contour.
+        找到线段和轮廓之间的交点。
 
         Parameters:
-        - line_segment: tuple, containing two points (x1, y1), (x2, y2) representing the line segment
-        - contour: numpy.ndarray, contour points
+        - line_segment: tuple，包含两个点 (x1, y1), (x2, y2) 表示线段
+        - contour: numpy.ndarray，轮廓点
 
         Returns:
-        - list of tuples, each tuple is an intersection point (x, y)
+        - 交点列表，每个元组是一个交点 (x, y)
         """
 
         def line_intersection(line1, line2):
@@ -418,6 +451,53 @@ class Feature:
                 if is_point_on_line(intersection, line_segment) and is_point_on_line(intersection, (pt1, pt2)):
                     intersections.append(intersection)
         return intersections
+    
+    def split_disconnected_contour(self) -> list[list[tuple]]:
+        """
+        将一个轮廓分解为多个相互独立（不直接或间接连接）的轮廓。
+        """
+        if self.type != "Contour":
+            raise ValueError("Feature type must be 'Contour'.")
+        contour = self.data['contour']
+        # 存储点的访问状态
+        visited_points = set()
+        contours = []
+
+        # 定义邻居方向
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+        def is_neighbor(p1, p2):
+            """
+            检查两个点是否相邻。
+            """
+            return any(p1[0] + dx == p2[0] and p1[1] + dy == p2[1] for dx, dy in directions)
+
+        def bfs(start_point):
+            """
+            使用 BFS 搜索一个点的所有连通点。
+            """
+            queue = [start_point]
+            component = []
+            visited_points.add(start_point)
+
+            while queue:
+                point = queue.pop(0)
+                component.append(point)
+
+                for neighbor in contour:
+                    if neighbor not in visited_points and is_neighbor(point, neighbor):
+                        visited_points.add(neighbor)
+                        queue.append(neighbor)
+
+            return component
+
+        # 遍历 contour 中的每个点，分组连通的点
+        for point in contour:
+            if point not in visited_points:
+                connected_contour = bfs(point)
+                contours.append(connected_contour)
+
+        return contours
 
 
 class FeatureManager:
